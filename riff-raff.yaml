@@ -1,0 +1,19 @@
+stacks: [frontend]
+regions: [eu-west-1]
+
+deployments:
+  editions-atom-renderer:
+    type: aws-lambda
+    parameters:
+      bucket: editions-dist
+      functionNames: [editions-atom-renderer-]
+      fileName: editions-atom-renderer.jar
+      prefixStack: false
+    dependencies: [editions-atom-renderer-cfn]
+  editions-atom-renderer-cfn:
+    type: cloud-formation
+    app: editions-atom-renderer
+    parameters:
+      prependStackToCloudFormationStackName: false
+      cloudFormationStackName: editions-atom-renderer
+      templatePath: cfn.yaml
