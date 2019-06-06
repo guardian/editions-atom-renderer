@@ -6,12 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.amazonaws.services.lambda.runtime.Context
 import com.gu.contentatom.renderer.ArticleConfiguration.CommonsdivisionConfiguration
 import org.slf4j.{Logger, LoggerFactory}
-import com.gu.contentatom.renderer.{
-  ArticleAtomRenderer,
-  ArticleConfiguration,
-  AudioSettings,
-  DefaultAtomRenderer
-}
+import com.gu.contentatom.renderer.{DefaultAtomRenderer}
 import com.gu.contentatom.thrift.AtomType
 import scala.concurrent.duration._
 
@@ -72,7 +67,7 @@ object Lambda {
 
     val search = ContentApiClient
       .item(s"atom/${path.atomType}/${path.atomId}")
-      .showAtoms("media")
+    // .showAtoms("all")
 
     println(search.toString())
     println(search.pathSegment)
@@ -82,40 +77,38 @@ object Lambda {
     val resp = Await.result(response, 20 seconds)
     println("Response received")
     println(resp.status)
-    val maybeAtoms = resp.content.flatMap(_.atoms)
-    maybeAtoms.flatMap { atoms =>
-      val all = List(
-        atoms.audios,
-        atoms.charts,
-        atoms.commonsdivisions,
-        atoms.cta,
-        atoms.explainers,
-        atoms.guides,
-        atoms.interactives,
-        atoms.media,
-        atoms.profiles,
-        atoms.qandas,
-        atoms.quizzes,
-        atoms.recipes,
-        atoms.reviews,
-        atoms.storyquestions,
-        atoms.timelines
+
+    val all = List(
+      resp.audio,
+      resp.chart,
+      resp.commonsdivision,
+      resp.cta,
+      resp.explainer,
+      resp.guide,
+      resp.interactive,
+      resp.media,
+      resp.profile,
+      resp.qanda,
+      resp.quiz,
+      resp.recipe,
+      resp.review,
+      resp.storyquestions,
+      resp.timeline
+    )
+
+    val maybeAtom = all.flatten.headOption
+    println(maybeAtom)
+
+    maybeAtom.map { atom =>
+      RenderedAtom(
+        html = DefaultAtomRenderer.getHTML(atom),
+        css = DefaultAtomRenderer.getCSS(Seq(atomType.get)),
+        js = DefaultAtomRenderer.getJS(Seq(atomType.get))
       )
-
-      val maybeAtom = all.flatMap(_.getOrElse(Seq())).headOption
-      println(maybeAtom)
-
-      maybeAtom.map { atom =>
-        RenderedAtom(
-          html = DefaultAtomRenderer.getHTML(atom),
-          css = DefaultAtomRenderer.getCSS(Seq(atomType.get)),
-          js = DefaultAtomRenderer.getJS(Seq(atomType.get))
-        )
-
-      }
     }
   }
 }
+
 object TestIt {
   def main(args: Array[String]): Unit = {
     val atomType = args(0)
