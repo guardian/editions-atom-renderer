@@ -5,7 +5,6 @@ import com.gu.contentapi.client.{ContentApiClient, GuardianContentClient}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.amazonaws.services.lambda.runtime.Context
 import com.gu.contentatom.renderer.ArticleConfiguration.CommonsdivisionConfiguration
-import org.slf4j.{Logger, LoggerFactory}
 import com.gu.contentatom.renderer.{DefaultAtomRenderer}
 import com.gu.contentatom.thrift.AtomType
 import scala.concurrent.duration._
@@ -48,8 +47,6 @@ object Env {
 }
 
 object Lambda {
-
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def handler(lambdaInput: LambdaInput, context: Context): Unit = {
 

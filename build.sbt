@@ -21,8 +21,6 @@ libraryDependencies ++= Seq(
   "com.gu" %% "content-api-client-default" % "14.3",
   "com.amazonaws" % "aws-lambda-java-core" % "1.2.0",
   "com.amazonaws" % "aws-lambda-java-log4j2" % "1.1.0",
-  "org.slf4j" % "slf4j-api" % "1.8.0-beta4",
-  "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.11.2",
   "io.circe" %% "circe-core" % "0.11.1",
   "io.circe" %% "circe-generic" % "0.11.1",
   "io.circe" %% "circe-parser" % "0.11.1"
