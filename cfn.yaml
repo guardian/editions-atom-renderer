@@ -65,7 +65,7 @@ Resources:
           Stage: !Ref Stage
           Stack: !Ref Stack
           App: !Ref App
-          Capi: !Ref CAPIKey
+          CAPIKEY: !Ref CAPIKey
       Description: renders atoms for editions
       Handler: com.gu.editionsatomrenderer.Lambda::handler
       MemorySize: 128

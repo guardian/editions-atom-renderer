@@ -1,7 +1,24 @@
 package com.gu.editionsatomrenderer
 
+import com.gu.contentapi.client.{ContentApiClient, GuardianContentClient}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import com.amazonaws.services.lambda.runtime.Context
+import com.gu.contentatom.renderer.ArticleConfiguration.CommonsdivisionConfiguration
 import org.slf4j.{Logger, LoggerFactory}
+import com.gu.contentatom.renderer.{
+  ArticleAtomRenderer,
+  ArticleConfiguration,
+  AudioSettings,
+  DefaultAtomRenderer
+}
+import com.gu.contentatom.thrift.AtomType
+import scala.concurrent.duration._
+
+import scala.concurrent.Await
+
+import io.circe.syntax._
+import io.circe.generic.auto._
 
 /**
   * This is compatible with aws' lambda JSON to POJO conversion.
@@ -9,12 +26,20 @@ import org.slf4j.{Logger, LoggerFactory}
   * {"name": "Bob"}
   */
 class LambdaInput() {
-  var name: String = _
-  def getName(): String = name
-  def setName(theName: String): Unit = name = theName
+  var atomType: String = _
+  var id: String = _
+
+  def getAtomType(): String = atomType
+  def setAtomType(thetype: String): Unit = atomType = thetype
+
+  def getId(): String = atomType
+  def setId(theid: String): Unit = id = theid
 }
 
-case class Env(app: String, stack: String, stage: String) {
+case class AtomPath(atomType: String, atomId: String)
+
+case class RenderedAtom(html: String, css: Seq[String], js: Seq[String])
+case class Env(app: String, stack: String, stage: String, capi: String) {
   override def toString: String = s"App: $app, Stack: $stack, Stage: $stage\n"
 }
 
@@ -22,7 +47,8 @@ object Env {
   def apply(): Env = Env(
     Option(System.getenv("App")).getOrElse("DEV"),
     Option(System.getenv("Stack")).getOrElse("DEV"),
-    Option(System.getenv("Stage")).getOrElse("DEV")
+    Option(System.getenv("Stage")).getOrElse("DEV"),
+    Option(System.getenv("CAPIKEY")).get
   )
 }
 
@@ -30,23 +56,74 @@ object Lambda {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  /*
-   * This is your lambda entry point
-   */
   def handler(lambdaInput: LambdaInput, context: Context): Unit = {
+
+    val path = AtomPath(lambdaInput.atomType, lambdaInput.id)
     val env = Env()
-    logger.info(s"Starting $env")
-    logger.info(process(lambdaInput.name, env))
+    val resp = process(path, env)
+    resp.asJson
+
   }
+  def process(path: AtomPath, env: Env): Option[RenderedAtom] = {
+    val client = new GuardianContentClient(env.capi)
 
-  /*
-   * I recommend to put your logic outside of the handler
-   */
-  def process(name: String, env: Env): String = s"Hello $name! (from ${env.app} in ${env.stack})\n"
+    val atomType =
+      AtomType.list.find(_.name.toUpperCase == path.atomType.toUpperCase)
+
+    val search = ContentApiClient
+      .item(s"atom/${path.atomType}/${path.atomId}")
+      .showAtoms("media")
+
+    println(search.toString())
+    println(search.pathSegment)
+
+    val response = client.getResponse(search)
+
+    val resp = Await.result(response, 20 seconds)
+    println("Response received")
+    println(resp.status)
+    val maybeAtoms = resp.content.flatMap(_.atoms)
+    maybeAtoms.flatMap { atoms =>
+      val all = List(
+        atoms.audios,
+        atoms.charts,
+        atoms.commonsdivisions,
+        atoms.cta,
+        atoms.explainers,
+        atoms.guides,
+        atoms.interactives,
+        atoms.media,
+        atoms.profiles,
+        atoms.qandas,
+        atoms.quizzes,
+        atoms.recipes,
+        atoms.reviews,
+        atoms.storyquestions,
+        atoms.timelines
+      )
+
+      val maybeAtom = all.flatMap(_.getOrElse(Seq())).headOption
+      println(maybeAtom)
+
+      maybeAtom.map { atom =>
+        RenderedAtom(
+          html = DefaultAtomRenderer.getHTML(atom),
+          css = DefaultAtomRenderer.getCSS(Seq(atomType.get)),
+          js = DefaultAtomRenderer.getJS(Seq(atomType.get))
+        )
+
+      }
+    }
+  }
 }
-
 object TestIt {
   def main(args: Array[String]): Unit = {
-    println(Lambda.process(args.headOption.getOrElse("Alex"), Env()))
+    val atomType = args(0)
+    val atomId = args(1)
+    val path = AtomPath(atomType, atomId)
+
+    println(Lambda.process(path, Env()))
+
   }
+
 }
