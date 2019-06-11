@@ -18,9 +18,8 @@ scalacOptions ++= Seq(
 
 libraryDependencies ++= Seq(
   "com.gu" %% "atom-renderer" % "1.0.3",
-  "com.gu" %% "content-api-client-default" % "14.3",
+  "com.gu" %% "content-api-client-default" % "14.1",
   "com.amazonaws" % "aws-lambda-java-core" % "1.2.0",
-  "com.amazonaws" % "aws-lambda-java-log4j2" % "1.1.0",
   "io.circe" %% "circe-core" % "0.11.1",
   "io.circe" %% "circe-generic" % "0.11.1",
   "io.circe" %% "circe-parser" % "0.11.1"
@@ -33,3 +32,10 @@ riffRaffPackageType := assembly.value
 riffRaffUploadArtifactBucket := Option("riffraff-artifact")
 riffRaffUploadManifestBucket := Option("riffraff-builds")
 riffRaffArtifactResources += (file("cfn.yaml"), s"${name.value}-cfn/cfn.yaml")
+
+assemblyMergeStrategy in assembly := {
+  case f if f.endsWith(".thrift") => MergeStrategy.discard
+  case f =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(f)
+}
