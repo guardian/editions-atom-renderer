@@ -54,7 +54,7 @@ object Lambda {
     val env = Env()
     val resp = process(path, env)
 
-    resp.asJson.noSpaces
+    resp.asJson.noSpaces //This gives extra quotes which we need to fix
 
   }
   def process(path: AtomPath, env: Env): Option[RenderedAtom] = {
