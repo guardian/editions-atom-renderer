@@ -48,7 +48,7 @@ object Env {
 
 object Lambda {
 
-  def handler(lambdaInput: LambdaInput, context: Context): Unit = {
+  def handler(lambdaInput: LambdaInput, context: Context): String = {
 
     val path = AtomPath(lambdaInput.atomType, lambdaInput.id)
     val env = Env()
