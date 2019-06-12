@@ -53,7 +53,8 @@ object Lambda {
     val path = AtomPath(lambdaInput.atomType, lambdaInput.id)
     val env = Env()
     val resp = process(path, env)
-    resp.asJson.pretty
+
+    resp.asJson.noSpaces
 
   }
   def process(path: AtomPath, env: Env): Option[RenderedAtom] = {
