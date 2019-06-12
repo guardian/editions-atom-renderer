@@ -48,12 +48,13 @@ object Env {
 
 object Lambda {
 
-  def handler(lambdaInput: LambdaInput, context: Context): Unit = {
+  def handler(lambdaInput: LambdaInput, context: Context): String = {
 
     val path = AtomPath(lambdaInput.atomType, lambdaInput.id)
     val env = Env()
     val resp = process(path, env)
-    resp.asJson
+
+    resp.asJson.noSpaces //This gives extra quotes which we need to fix
 
   }
   def process(path: AtomPath, env: Env): Option[RenderedAtom] = {
